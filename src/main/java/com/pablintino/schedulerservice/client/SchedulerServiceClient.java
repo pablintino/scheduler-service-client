@@ -1,9 +1,12 @@
 package com.pablintino.schedulerservice.client;
 
 import com.pablintino.schedulerservice.amqp.AmqpCallbackMessage;
+import com.pablintino.schedulerservice.client.models.SchedulerMetadata;
+import com.pablintino.schedulerservice.client.models.SchedulerTask;
 import com.pablintino.schedulerservice.dtos.CallbackDescriptorDto;
 import com.pablintino.schedulerservice.dtos.CallbackMethodTypeDto;
 import com.pablintino.schedulerservice.dtos.ScheduleRequestDto;
+import com.pablintino.schedulerservice.dtos.ScheduleTaskDto;
 import com.pablintino.services.commons.responses.HttpErrorBody;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
@@ -21,6 +24,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -61,8 +65,8 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
         Assert.notNull(id, "triggerTime cannot be null");
 
         /* Prepare the request body */
-        ScheduleRequestDto request = createCommonRequest(key, id, triggerTime, data);
-        doCallRemote(request);
+        ScheduleRequestDto request = createCommonScheduleRequest(key, id, triggerTime, data);
+        doScheduleRemote(request);
     }
 
     @Override
@@ -73,9 +77,9 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
         Assert.hasLength(id, "cronExpression cannot be null");
 
         /* Prepare the request body */
-        ScheduleRequestDto request = createCommonRequest(key, id, triggerTime, data);
+        ScheduleRequestDto request = createCommonScheduleRequest(key, id, triggerTime, data);
         request.setCronExpression(cronExpression);
-        doCallRemote(request);
+        doScheduleRemote(request);
     }
 
     @Override
@@ -101,16 +105,67 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
         callbackMap.put(key, callback);
     }
 
+    @Override
+    public void deleteTask(String key, String id) {
+        schedulerClient.delete()
+                .uri("/schedules/{key}/{id}", key, id)
+                .retrieve()
+                .onStatus(HttpStatus::isError, response ->
+                        response
+                                .bodyToMono(HttpErrorBody.class)
+                                .flatMap(err ->
+                                        Mono.error(new ScheduleServiceClientException(err.getErrorMessage()))
+                                )
+                )
+                .bodyToMono(Void.class)
+                .timeout(Duration.of(clientTimeout, ChronoUnit.MILLIS)).block();
+    }
+
+    @Override
+    public SchedulerTask getTask(String key, String id) {
+        try {
+            ScheduleTaskDto scheduleTaskDto = schedulerClient.get()
+                    .uri("/schedules/{key}/{id}", key, id)
+                    .retrieve()
+                    .onStatus(HttpStatus::isError, response ->
+                            response
+                                    .bodyToMono(HttpErrorBody.class)
+                                    .flatMap(err ->
+                                            Mono.error(new ScheduleServiceClientException(err.getErrorMessage(), err.getStatus()))
+                                    )
+                    )
+                    .bodyToMono(ScheduleTaskDto.class)
+                    .timeout(Duration.of(clientTimeout, ChronoUnit.MILLIS)).block();
+            return new SchedulerTask(
+                    scheduleTaskDto.getTaskIdentifier(),
+                    scheduleTaskDto.getTaskKey(),
+                    scheduleTaskDto.getTriggerTime(),
+                    scheduleTaskDto.getCronExpression(),
+                    scheduleTaskDto.getTaskData()
+            );
+        } catch (ScheduleServiceClientException ex) {
+            if (ex.getHttpCode() != null && ex.getHttpCode().equals(HttpStatus.NOT_FOUND.value())) {
+                return null;
+            }
+            throw ex;
+        }
+    }
+
     @RabbitListener(id = LISTENER_ID, concurrency = "10")
     public void queueListener(AmqpCallbackMessage callbackMessage) {
         log.debug("Incoming AMQP message " + callbackMessage);
         if (callbackMap.containsKey(callbackMessage.getKey())) {
+            SchedulerMetadata metadata = new SchedulerMetadata(
+                    callbackMessage.getTriggerTime() > 0 ? Instant.ofEpochMilli(callbackMessage.getTriggerTime()) : null,
+                    callbackMessage.getNotificationAttempt()
+            );
             callbackMap.get(callbackMessage.getKey())
-                    .callback(callbackMessage.getId(), callbackMessage.getKey(), callbackMessage.getDataMap());
+                    .callback(callbackMessage.getId(), callbackMessage.getKey(), callbackMessage.getDataMap(), metadata);
         }
     }
 
-    private static ScheduleRequestDto createCommonRequest(String key, String id, ZonedDateTime triggerTime, Map<String, Object> data) {
+    private static ScheduleRequestDto createCommonScheduleRequest(String key, String id, ZonedDateTime
+            triggerTime, Map<String, Object> data) {
         /* Prepare the request body */
         ScheduleRequestDto request = new ScheduleRequestDto();
         request.setTaskData(data);
@@ -123,7 +178,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
         return request;
     }
 
-    private void doCallRemote(ScheduleRequestDto request) {
+    private void doScheduleRemote(ScheduleRequestDto request) {
         schedulerClient.post()
                 .uri("/schedules")
                 .body(Mono.just(request), ScheduleRequestDto.class)
