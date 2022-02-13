@@ -28,8 +28,8 @@
         </dependency>
         <dependency>
             <groupId>com.pablintino.services</groupId>
-            <artifactId>commons</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>service-commons</artifactId>
+            <version>0.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -249,5 +249,21 @@
             </build>
         </profile>
     </profiles>
+ <repositories>
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.pablintino.com/api/v4/groups/pablintino-arq/-/packages/maven</url>
+        </repository>
+    </repositories>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.pablintino.com/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+        </snapshotRepository>
+        <repository>
+            <id>gitlab-maven</id>
+            <url>https://gitlab.pablintino.com/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+        </repository>
+    </distributionManagement>
 
 </project>
