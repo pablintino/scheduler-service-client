@@ -14,7 +14,7 @@
     </parent>
 
     <artifactId>scheduler-service-client</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <properties>
         <java.version>11</java.version>
@@ -22,13 +22,13 @@
 
     <build>
         <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <configuration>
-            <tagNameFormat>v@{project.version}</tagNameFormat>
-            </configuration>
-        </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.pablintino.services</groupId>
             <artifactId>scheduler-service-models</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.pablintino.services</groupId>
@@ -91,8 +91,8 @@
                 <scheduler-container-version>latest</scheduler-container-version>
                 <postgres-container-name>scheduler_client_it_db_${timestamp-unique-id}</postgres-container-name>
                 <rabbitmq-container-name>scheduler_client_it_rabbit_${timestamp-unique-id}</rabbitmq-container-name>
-
             </properties>
+
             <build>
                 <plugins>
                     <plugin>
@@ -199,7 +199,9 @@
                                     </run>
                                 </image>
                                 <image>
-                                    <name>registry.pablintino.com/pablintino-arq/scheduler-service:${scheduler-container-version}</name>
+                                    <name>
+                                        registry.pablintino.com/pablintino-arq/scheduler-service:${scheduler-container-version}
+                                    </name>
                                     <run>
                                         <containerNamePattern>${scheduler-container-name}</containerNamePattern>
                                         <ports>
@@ -279,7 +281,7 @@
             </build>
         </profile>
     </profiles>
- <repositories>
+    <repositories>
         <repository>
             <id>gitlab-maven</id>
             <url>https://gitlab.pablintino.com/api/v4/groups/pablintino-arq/-/packages/maven</url>
