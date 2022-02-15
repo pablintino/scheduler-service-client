@@ -36,7 +36,12 @@
         <dependency>
             <groupId>com.pablintino.services</groupId>
             <artifactId>scheduler-service-models</artifactId>
-            <version>0.0.3-SNAPSHOT</version>
+            <version>0.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.pablintino.services</groupId>
+            <artifactId>service-commons-amqp</artifactId>
+            <version>0.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.pablintino.services</groupId>

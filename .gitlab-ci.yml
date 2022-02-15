@@ -66,9 +66,9 @@ release:
   when: manual
   before_script:
     - 'mkdir -p ~/.ssh/'
-    - echo -n "$DEPLOY_PRIVATE_KEY" | base64 --decode > ~/.ssh/id_rsa
-    - chmod 700 ~/.ssh
-    - chmod 600 ~/.ssh/id_rsa
+    - 'echo -n "$DEPLOY_PRIVATE_KEY" | base64 --decode > ~/.ssh/id_rsa'
+    - 'chmod 700 ~/.ssh'
+    - 'chmod 600 ~/.ssh/id_rsa'
     - 'cp $KNOWN_HOSTS ~/.ssh/known_hosts'
     - 'apt-get update && apt-get install -y git'
     - 'git config --global user.email "noreply@your.gitlab.host"'
