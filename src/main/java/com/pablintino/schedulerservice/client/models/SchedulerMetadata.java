@@ -6,7 +6,6 @@ import java.time.Instant;
 
 @RequiredArgsConstructor
 public class SchedulerMetadata {
-    private final Instant triggerTime;
-    private final int triggerAttempt;
-
+  private final Instant triggerTime;
+  private final int triggerAttempt;
 }
