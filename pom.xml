@@ -302,5 +302,9 @@
             <url>https://gitlab.pablintino.com/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
         </repository>
     </distributionManagement>
+    <scm>
+        <developerConnection>scm:git:git@gitlab.pablintino.com:pablintino-arq/scheduler-service-client.git</developerConnection>
+        <tag>v0.0.3</tag>
+    </scm>
 
 </project>
