@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.pablintino.services</groupId>
             <artifactId>scheduler-service-models</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.pablintino.services</groupId>
