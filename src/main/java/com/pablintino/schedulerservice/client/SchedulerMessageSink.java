@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 class SchedulerMessageSink<T extends Object> implements ISchedulerMessageSink<T> {
@@ -64,7 +65,7 @@ class SchedulerMessageSink<T extends Object> implements ISchedulerMessageSink<T>
       Charset charset =
           StringUtils.isNotBlank(encoding) && Charset.isSupported(encoding)
               ? Charset.forName(encoding)
-              : Charset.forName("UTF-8");
+              : StandardCharsets.UTF_8;
       if (MEDIA_TYPE_APPLICATION_JSON.equals(delivery.getProperties().getContentType())) {
         String jsonMessage = new String(delivery.getBody(), charset);
 

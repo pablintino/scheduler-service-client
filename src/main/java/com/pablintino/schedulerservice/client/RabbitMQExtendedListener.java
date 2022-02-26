@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
-public class ExtendedRabbitMQListener implements IExtendedRabbitMQListener {
+public class RabbitMQExtendedListener implements IExtendedRabbitMQListener {
 
   private static final int FAILURE_REATTEMPTS = 3;
   private final Map<String, ISchedulerMessageSink<?>> consumers = new HashMap<>();
@@ -29,7 +29,7 @@ public class ExtendedRabbitMQListener implements IExtendedRabbitMQListener {
   private Channel channel;
   private ExecutorService threadPoolExecutor = Executors.newFixedThreadPool(10);
 
-  public ExtendedRabbitMQListener(String uri) {
+  public RabbitMQExtendedListener(String uri) {
     if (StringUtils.isBlank(uri)) {
       throw new IllegalArgumentException("uri cannot be null or empty");
     }
@@ -42,7 +42,7 @@ public class ExtendedRabbitMQListener implements IExtendedRabbitMQListener {
     }
   }
 
-  public ExtendedRabbitMQListener(ConnectionFactory connectionFactory) {
+  public RabbitMQExtendedListener(ConnectionFactory connectionFactory) {
     if (connectionFactory == null) {
       throw new IllegalArgumentException("connectionFactory cannot be null");
     }
@@ -53,7 +53,7 @@ public class ExtendedRabbitMQListener implements IExtendedRabbitMQListener {
   public void installConsumer(String queue, ISchedulerMessageSink<?> messageSink) {
     synchronized (consumers) {
       if (consumers.containsKey(queue)) {
-        throw new RuntimeException("Queue has already a registered consumer");
+        throw new RabbitMQListenerException("Queue has already a registered consumer");
       }
       try {
         callOnChannel(c -> addChannelConsumer(c, queue, messageSink));
@@ -108,10 +108,7 @@ public class ExtendedRabbitMQListener implements IExtendedRabbitMQListener {
   private static void addChannelConsumer(
       Channel channel, String queue, ISchedulerMessageSink<?> messageSink) throws IOException {
     channel.basicConsume(
-        queue,
-        true,
-        (String consumerTag, Delivery message) -> messageSink.sink(message),
-        (s) -> {});
+        queue, true, (String consumerTag, Delivery message) -> messageSink.sink(message), s -> {});
   }
 
   private void callOnChannel(IRabbitChannelConsumer function) throws IOException, TimeoutException {
