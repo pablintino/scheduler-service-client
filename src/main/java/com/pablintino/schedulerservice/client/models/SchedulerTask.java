@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.time.ZonedDateTime;
-import java.util.Map;
 
 @Getter
 @ToString
@@ -20,5 +19,5 @@ public class SchedulerTask {
   private final ZonedDateTime triggerTime;
   private final String cronExpression;
 
-  @ToString.Exclude private final Map<String, Object> taskData;
+  @ToString.Exclude private final Object taskData;
 }

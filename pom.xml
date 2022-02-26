@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -7,7 +8,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.5.3</version>
-        <relativePath /> <!-- lookup parent from repository -->
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.pablintino.services</groupId>
     <artifactId>scheduler-service-client</artifactId>
@@ -33,12 +34,7 @@
         <dependency>
             <groupId>com.pablintino.services</groupId>
             <artifactId>scheduler-service-models</artifactId>
-            <version>0.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.pablintino.services</groupId>
-            <artifactId>service-commons-amqp</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.pablintino.services</groupId>
@@ -46,12 +42,8 @@
             <version>0.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.amqp</groupId>
-            <artifactId>spring-rabbit</artifactId>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -78,6 +70,10 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
     </dependencies>
 
@@ -107,7 +103,9 @@
                                 </goals>
                                 <configuration>
                                     <systemProperties>
-                                        <spring.rabbitmq.port>${rabbitmq.broker.port}</spring.rabbitmq.port>
+                                        <com.pablintino.scheduler.client.rabbit-uri>
+                                            amqp://localhost:${rabbitmq.broker.port}
+                                        </com.pablintino.scheduler.client.rabbit-uri>
                                         <com.pablintino.scheduler.client.url>
                                             http://localhost:${scheduler-service.port}
                                         </com.pablintino.scheduler.client.url>
@@ -300,7 +298,8 @@
         </repository>
     </distributionManagement>
     <scm>
-        <developerConnection>scm:git:git@gitlab.pablintino.com:pablintino-arq/scheduler-service-client.git</developerConnection>
+        <developerConnection>scm:git:git@gitlab.pablintino.com:pablintino-arq/scheduler-service-client.git
+        </developerConnection>
         <tag>v0.0.3</tag>
     </scm>
 

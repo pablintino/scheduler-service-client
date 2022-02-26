@@ -3,10 +3,10 @@ package com.pablintino.schedulerservice.client.tests;
 import com.pablintino.schedulerservice.client.ISchedulerServiceClient;
 import com.pablintino.schedulerservice.client.config.SchedulerClientConfiguration;
 import com.pablintino.schedulerservice.client.models.SchedulerTask;
+import com.pablintino.schedulerservice.client.tests.utils.DummyPayload;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +15,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -25,10 +24,11 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest(properties = {"com.pablintino.scheduler.client.exchange-name=svcs.schedules"})
 class ClientIT {
 
-  @EnableRabbit
   @Configuration
   @Import(SchedulerClientConfiguration.class)
   static class TestConfiguration {}
+
+  private static final Random RANDOM = new Random();
 
   @Autowired private ISchedulerServiceClient scheduleClient;
 
@@ -38,20 +38,28 @@ class ClientIT {
   @DirtiesContext
   @DisplayName("Test creation")
   void simpleSendOK() throws InterruptedException {
-    scheduleClient.registerCallback(
-        "svcs.dummy.key1",
-        (id, key, dataMap, metadata) -> {
-          try {
-            messageQueue.put(id);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        });
-    Map<String, Object> testMap = new HashMap<>();
-    testMap.put("test-key", "dummy-value");
+    String randomKey = generateRandomKey();
+    scheduleClient.registerMessageSink(
+        randomKey,
+        scheduleClient
+            .getMessageSinkBuilder()
+            .ofType(DummyPayload.class)
+            .callback(
+                (id, key, data, metadata) -> {
+                  try {
+                    messageQueue.put(id);
+                  } catch (InterruptedException e) {
+                    Assertions.fail("interrupted exception");
+                  }
+                })
+            .build());
+
     String taskId = UUID.randomUUID().toString();
     scheduleClient.scheduleTask(
-        "svcs.dummy.key1", taskId, ZonedDateTime.now().plus(3, ChronoUnit.SECONDS), testMap);
+        randomKey,
+        taskId,
+        ZonedDateTime.now().plus(3, ChronoUnit.SECONDS),
+        DummyPayload.buildDummy());
     Assertions.assertEquals(taskId, messageQueue.poll(10, TimeUnit.SECONDS));
   }
 
@@ -59,24 +67,29 @@ class ClientIT {
   @DirtiesContext
   @DisplayName("Test cron creation")
   void simpleCronSendOK() throws InterruptedException {
-    scheduleClient.registerCallback(
-        "svcs.dummy.key1",
-        (id, key, dataMap, metadata) -> {
-          try {
-            messageQueue.put(id);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        });
-    Map<String, Object> testMap = new HashMap<>();
-    testMap.put("test-key", "dummy-value");
+    String randomKey = generateRandomKey();
+    scheduleClient.registerMessageSink(
+        randomKey,
+        scheduleClient
+            .getMessageSinkBuilder()
+            .ofType(DummyPayload.class)
+            .callback(
+                (id, key, data, metadata) -> {
+                  try {
+                    messageQueue.put(id);
+                  } catch (InterruptedException e) {
+                    Assertions.fail("interrupted exception");
+                  }
+                })
+            .build());
+
     String taskId = UUID.randomUUID().toString();
     scheduleClient.scheduleTask(
-        "svcs.dummy.key1",
+        randomKey,
         taskId,
         ZonedDateTime.now().plus(1, ChronoUnit.SECONDS),
         "*/2 * * * * ?",
-        testMap);
+        DummyPayload.buildDummy());
     for (int index = 0; index < 2; index++) {
       Assertions.assertEquals(taskId, messageQueue.poll(3, TimeUnit.SECONDS));
     }
@@ -86,21 +99,29 @@ class ClientIT {
   @DirtiesContext
   @DisplayName("Test deletion")
   void simpleSendAndDeleteOK() throws InterruptedException {
-    scheduleClient.registerCallback(
-        "svcs.dummy.key1",
-        (id, key, dataMap, metadata) -> {
-          try {
-            messageQueue.put(id);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        });
-    Map<String, Object> testMap = new HashMap<>();
-    testMap.put("test-key", "dummy-value");
+    String randomKey = generateRandomKey();
+    scheduleClient.registerMessageSink(
+        randomKey,
+        scheduleClient
+            .getMessageSinkBuilder()
+            .ofType(DummyPayload.class)
+            .callback(
+                (id, key, data, metadata) -> {
+                  try {
+                    messageQueue.put(id);
+                  } catch (InterruptedException e) {
+                    Assertions.fail("interrupted exception");
+                  }
+                })
+            .build());
+
     String taskId = UUID.randomUUID().toString();
     scheduleClient.scheduleTask(
-        "svcs.dummy.key1", taskId, ZonedDateTime.now().plus(3, ChronoUnit.SECONDS), testMap);
-    scheduleClient.deleteTask("svcs.dummy.key1", taskId);
+        randomKey,
+        taskId,
+        ZonedDateTime.now().plus(3, ChronoUnit.SECONDS),
+        DummyPayload.buildDummy());
+    scheduleClient.deleteTask(randomKey, taskId);
     String message = messageQueue.poll(6, TimeUnit.SECONDS);
     Assertions.assertNull(message);
   }
@@ -109,26 +130,38 @@ class ClientIT {
   @DirtiesContext
   @DisplayName("Test retrieval")
   void simpleGetOK() throws InterruptedException {
-    scheduleClient.registerCallback(
-        "svcs.dummy.key1",
-        (id, key, dataMap, metadata) -> {
-          try {
-            messageQueue.put(id);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        });
-    Map<String, Object> testMap = new HashMap<>();
-    testMap.put("test-key", "dummy-value");
+    String randomKey = generateRandomKey();
+    scheduleClient.registerMessageSink(
+        randomKey,
+        scheduleClient
+            .getMessageSinkBuilder()
+            .ofType(DummyPayload.class)
+            .callback(
+                (id, key, data, metadata) -> {
+                  try {
+                    messageQueue.put(id);
+                  } catch (InterruptedException e) {
+                    Assertions.fail("interrupted exception");
+                  }
+                })
+            .build());
+
     String taskId = UUID.randomUUID().toString();
     scheduleClient.scheduleTask(
-        "svcs.dummy.key1", taskId, ZonedDateTime.now().plus(5, ChronoUnit.SECONDS), testMap);
+        randomKey,
+        taskId,
+        ZonedDateTime.now().plus(5, ChronoUnit.SECONDS),
+        DummyPayload.buildDummy());
 
-    SchedulerTask task = scheduleClient.getTask("svcs.dummy.key1", taskId);
+    SchedulerTask task = scheduleClient.getTask(randomKey, taskId);
     Assertions.assertNotNull(task);
     String message = messageQueue.poll(10, TimeUnit.SECONDS);
     Assertions.assertNotNull(message);
     Assertions.assertNull(
         scheduleClient.getTask(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
+  }
+
+  private static String generateRandomKey() {
+    return "svcs.dummy.key" + RANDOM.nextLong();
   }
 }
