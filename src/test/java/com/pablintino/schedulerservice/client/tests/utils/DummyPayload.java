@@ -10,12 +10,12 @@ public class DummyPayload {
   public static DummyPayload buildDummy() {
     DummyPayload dummyPayload = new DummyPayload();
     dummyPayload.setTestInstant(Instant.now());
-    dummyPayload.setTestInsteger(4);
+    dummyPayload.setTestInteger(4);
     dummyPayload.setTestString("test-string");
     return dummyPayload;
   }
 
   public String testString;
   public Instant testInstant;
-  public Integer testInsteger;
+  public Integer testInteger;
 }

@@ -12,50 +12,18 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
-class SchedulerMessageSink<T extends Object> implements ISchedulerMessageSink<T> {
+class SchedulerMessageSink<T> implements ISchedulerMessageSink<T> {
 
   private static final String MEDIA_TYPE_APPLICATION_JSON = "application/json";
   private final ObjectMapper objectMapper;
   private final Class<T> dataType;
   private final IScheduleCallback<T> callback;
 
-  private SchedulerMessageSink(
+  SchedulerMessageSink(
       ObjectMapper objectMapper, IScheduleCallback<T> callback, Class<T> dataType) {
     this.objectMapper = objectMapper;
     this.dataType = dataType;
     this.callback = callback;
-  }
-
-  public static class Builder {
-    private final ObjectMapper objectMapper;
-
-    Builder(ObjectMapper objectMapper) {
-      this.objectMapper = objectMapper;
-    }
-
-    public <T> TypedBuilder<T> ofType(Class<T> dataType) {
-      return new TypedBuilder<>(objectMapper, dataType);
-    }
-  }
-
-  public static class TypedBuilder<T> {
-    private final ObjectMapper objectMapper;
-    private final Class<T> dataType;
-    private IScheduleCallback<T> callback;
-
-    public TypedBuilder(ObjectMapper objectMapper, Class<T> dataType) {
-      this.objectMapper = objectMapper;
-      this.dataType = dataType;
-    }
-
-    public TypedBuilder<T> callback(IScheduleCallback<T> callback) {
-      this.callback = callback;
-      return this;
-    }
-
-    public ISchedulerMessageSink<T> build() {
-      return new SchedulerMessageSink<>(objectMapper, callback, dataType);
-    }
   }
 
   @Override

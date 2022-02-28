@@ -16,5 +16,5 @@ public interface ISchedulerServiceClient {
 
   SchedulerTask getTask(String key, String id);
 
-  SchedulerMessageSink.Builder getMessageSinkBuilder();
+  <T> ISchedulerMessageSinkBuilder<T> getMessageSinkBuilder(Class<T> messageSinkType);
 }

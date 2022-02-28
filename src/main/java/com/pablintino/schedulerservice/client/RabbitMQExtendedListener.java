@@ -20,14 +20,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 @Slf4j
-public class RabbitMQExtendedListener implements IExtendedRabbitMQListener {
+public class RabbitMQExtendedListener implements IExtendedRabbitMQListener, AutoCloseable {
 
   private static final int FAILURE_REATTEMPTS = 3;
   private final Map<String, ISchedulerMessageSink<?>> consumers = new HashMap<>();
+  private final ExecutorService threadPoolExecutor = Executors.newFixedThreadPool(10);
   private final ConnectionFactory connectionFactory;
   private Connection connection;
   private Channel channel;
-  private ExecutorService threadPoolExecutor = Executors.newFixedThreadPool(10);
 
   public RabbitMQExtendedListener(String uri) {
     if (StringUtils.isBlank(uri)) {
@@ -85,19 +85,26 @@ public class RabbitMQExtendedListener implements IExtendedRabbitMQListener {
     }
   }
 
+  @Override
+  public void close() throws Exception {
+    if (connection != null) {
+      connection.close();
+    }
+  }
+
   private synchronized Channel getChannel() throws IOException, TimeoutException {
     if (connection == null || !connection.isOpen()) {
       connection = connectionFactory.newConnection(getAppIdentifier());
     }
     if (channel == null || !channel.isOpen()) {
-      Channel chan = connection.createChannel();
-      /* Avoid installation on first creation */
-      if (channel == null) {
-        synchronized (consumers) {
-          for (Map.Entry<String, ISchedulerMessageSink<?>> entry : consumers.entrySet()) {
-            addChannelConsumer(channel, entry.getKey(), entry.getValue());
-          }
+      Channel chan = connection.createChannel(); // NOSONAR
+      /* Close the old channel */
+      closeChannel(channel);
+      synchronized (consumers) {
+        for (Map.Entry<String, ISchedulerMessageSink<?>> entry : consumers.entrySet()) {
+          addChannelConsumer(chan, entry.getKey(), entry.getValue());
         }
+
         channel = chan;
       }
     }
@@ -126,12 +133,20 @@ public class RabbitMQExtendedListener implements IExtendedRabbitMQListener {
     throw exception;
   }
 
+  private static void closeChannel(Channel channel) {
+    if (channel != null) {
+      try {
+        channel.close();
+      } catch (IOException | TimeoutException ex) {
+        log.error("Error while closing AMQP channel " + channel);
+      }
+    }
+  }
+
   private static String getAppIdentifier() throws UnknownHostException {
-    StringBuilder builder = new StringBuilder();
-    builder.append("scheduler-client-");
-    builder.append(InetAddress.getLocalHost().getHostName());
-    builder.append("-");
-    builder.append(ProcessHandle.current().pid());
-    return builder.toString();
+    return "scheduler-client-"
+        + InetAddress.getLocalHost().getHostName()
+        + "-"
+        + ProcessHandle.current().pid();
   }
 }

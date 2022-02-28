@@ -28,11 +28,9 @@ class ClientIT {
   @Import(SchedulerClientConfiguration.class)
   static class TestConfiguration {}
 
+  private final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
   private static final Random RANDOM = new Random();
-
   @Autowired private ISchedulerServiceClient scheduleClient;
-
-  private BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
 
   @Test
   @DirtiesContext
@@ -42,8 +40,7 @@ class ClientIT {
     scheduleClient.registerMessageSink(
         randomKey,
         scheduleClient
-            .getMessageSinkBuilder()
-            .ofType(DummyPayload.class)
+            .getMessageSinkBuilder(DummyPayload.class)
             .callback(
                 (id, key, data, metadata) -> {
                   try {
@@ -71,8 +68,7 @@ class ClientIT {
     scheduleClient.registerMessageSink(
         randomKey,
         scheduleClient
-            .getMessageSinkBuilder()
-            .ofType(DummyPayload.class)
+            .getMessageSinkBuilder(DummyPayload.class)
             .callback(
                 (id, key, data, metadata) -> {
                   try {
@@ -103,8 +99,7 @@ class ClientIT {
     scheduleClient.registerMessageSink(
         randomKey,
         scheduleClient
-            .getMessageSinkBuilder()
-            .ofType(DummyPayload.class)
+            .getMessageSinkBuilder(DummyPayload.class)
             .callback(
                 (id, key, data, metadata) -> {
                   try {
@@ -134,8 +129,7 @@ class ClientIT {
     scheduleClient.registerMessageSink(
         randomKey,
         scheduleClient
-            .getMessageSinkBuilder()
-            .ofType(DummyPayload.class)
+            .getMessageSinkBuilder(DummyPayload.class)
             .callback(
                 (id, key, data, metadata) -> {
                   try {

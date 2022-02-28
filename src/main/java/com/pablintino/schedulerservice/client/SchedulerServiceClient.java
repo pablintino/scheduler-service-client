@@ -36,6 +36,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
   private final Map<String, ISchedulerMessageSink<?>> sinksMap = new HashMap<>();
   private final IExtendedRabbitMQListener rabbitMQManager;
   private final HttpClient httpClient;
+  private final long clientTimeout;
   private final ObjectMapper objectMapper;
   private final String exchange;
 
@@ -55,6 +56,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
 
     this.rabbitMQManager = rabbitMQManager;
     this.objectMapper = objectMapper;
+    this.clientTimeout = clientTimeout;
     this.exchange = exchange;
 
     try {
@@ -63,10 +65,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
       throw new IllegalArgumentException("The given URL is not valid", ex);
     }
 
-    this.httpClient =
-        HttpClient.newBuilder()
-            .connectTimeout(Duration.of(clientTimeout, ChronoUnit.MILLIS))
-            .build();
+    this.httpClient = HttpClient.newBuilder().build();
   }
 
   @Override
@@ -100,7 +99,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
     Assert.hasLength(key, "key cannot be null or empty");
 
     if (sinksMap.containsKey(key)) {
-      throw new ScheduleServiceClientException("Key  " + key + " was already registered");
+      throw new SchedulerServiceClientException("Key  " + key + " was already registered");
     }
 
     /* Idempotent calls */
@@ -134,19 +133,19 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
   }
 
   @Override
-  public SchedulerMessageSink.Builder getMessageSinkBuilder() {
-    return new SchedulerMessageSink.Builder(objectMapper);
+  public <T> ISchedulerMessageSinkBuilder<T> getMessageSinkBuilder(Class<T> messageSinkType) {
+    return new SchedulerMessageSinkBuilder<>(objectMapper, messageSinkType);
   }
 
   private ScheduleRequestDto createCommonScheduleRequest(
       String key, String id, ZonedDateTime triggerTime, Object data) {
 
     if (!sinksMap.containsKey(key)) {
-      throw new ScheduleServiceClientException("Key  " + key + " has no sink registered");
+      throw new SchedulerServiceClientException("Key  " + key + " has no sink registered");
     }
 
     if (data != null && !sinksMap.get(key).getDataType().equals(data.getClass())) {
-      throw new ScheduleServiceClientException(
+      throw new SchedulerServiceClientException(
           "Data type "
               + data.getClass().getName()
               + " doesn't match the registered sink data type");
@@ -172,7 +171,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
               .build();
       performRequest(httpRequest, Void.class);
     } catch (JsonProcessingException ex) {
-      throw new ScheduleServiceClientException("Cannot serialize task request", ex);
+      throw new SchedulerServiceClientException("Cannot serialize task request", ex);
     }
   }
 
@@ -185,7 +184,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
       }
       if (httpResponse.statusCode() / 100 != 2) {
         HttpErrorBody errorBody = objectMapper.readValue(httpResponse.body(), HttpErrorBody.class);
-        throw new ScheduleServiceClientException(errorBody.getErrorMessage());
+        throw new SchedulerServiceClientException(errorBody.getErrorMessage());
       }
       if (rType == null || Void.class.equals(rType)) {
         return Optional.empty();
@@ -194,22 +193,23 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
           httpResponse.headers().firstValue("Content-Type").orElse(null))) {
         return Optional.ofNullable(objectMapper.readValue(httpResponse.body(), rType));
       }
-      throw new ScheduleServiceClientException("Unexpected scheduler response Media-Type");
+      throw new SchedulerServiceClientException("Unexpected scheduler response Media-Type");
     } catch (JsonProcessingException ex) {
-      throw new ScheduleServiceClientException(
+      throw new SchedulerServiceClientException(
           "Error parsing request/response scheduler task retrieval request", ex);
     } catch (IOException ex) {
-      throw new ScheduleServiceClientException("Error retrieving scheduler task", ex);
+      throw new SchedulerServiceClientException("Error retrieving scheduler task", ex);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      throw new ScheduleServiceClientException("Send thread interrupted", ex);
+      throw new SchedulerServiceClientException("Send thread interrupted", ex);
     }
   }
 
-  private static HttpRequest.Builder createCommonRequestBuilder(URI uri) {
+  private HttpRequest.Builder createCommonRequestBuilder(URI uri) {
     return HttpRequest.newBuilder(uri)
         .header("Content-Type", MEDIA_TYPE_APPLICATION_JSON)
-        .header("Accept", MEDIA_TYPE_APPLICATION_JSON);
+        .header("Accept", MEDIA_TYPE_APPLICATION_JSON)
+        .timeout(Duration.of(clientTimeout, ChronoUnit.MILLIS));
   }
 
   private URI createURIfromURL(URL url) {
