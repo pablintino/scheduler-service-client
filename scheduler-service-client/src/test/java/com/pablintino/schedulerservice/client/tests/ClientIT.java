@@ -28,7 +28,7 @@ class ClientIT {
   void beforeEach() {
     String rabbitUrl =
         System.getProperty(
-            "COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT-URI", "amqp://guest:guest@localhost:5672");
+            "COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT_URI", "amqp://guest:guest@localhost:5672");
     String serviceUrl =
         System.getProperty("COM_PABLINTINO_SCHEDULER_CLIENT_URL", "http://localhost:8080");
     listener = new RabbitMQExtendedListener(rabbitUrl);

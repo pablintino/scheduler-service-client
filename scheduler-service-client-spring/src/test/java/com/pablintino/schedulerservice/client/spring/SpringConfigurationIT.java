@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-@SpringBootTest(properties = {"com.pablintino.scheduler.client.exchange-name=svcs.schedules"})
+@SpringBootTest(properties = {"com.pablintino.scheduler.client.exchange.name=svcs.schedules"})
 public class SpringConfigurationIT {
 
   @Configuration

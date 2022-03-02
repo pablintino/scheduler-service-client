@@ -67,9 +67,9 @@
                                 </goals>
                                 <configuration>
                                     <systemProperties>
-                                        <COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT-URI>
+                                        <COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT_URI>
                                             amqp://guest:guest@localhost:${rabbitmq.broker.port}
-                                        </COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT-URI>
+                                        </COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT_URI>
                                         <COM_PABLINTINO_SCHEDULER_CLIENT_URL>
                                             http://localhost:${scheduler-service.port}
                                         </COM_PABLINTINO_SCHEDULER_CLIENT_URL>
