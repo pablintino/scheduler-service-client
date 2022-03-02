@@ -18,7 +18,7 @@ public class SchedulerClientConfiguration {
   @Bean
   IExtendedRabbitMQListener rabbitMQManager(
       @Autowired(required = false) ConnectionFactory connectionFactory,
-      @Value("${com.pablintino.scheduler.client.rabbit-uri:#{null}}") String rabbitMqUri) {
+      @Value("${com.pablintino.scheduler.client.rabbit.uri:#{null}}") String rabbitMqUri) {
     if (StringUtils.isBlank(rabbitMqUri) && connectionFactory == null) {
       throw new IllegalStateException("One of uri or connection factory should be provided");
     }
@@ -33,7 +33,7 @@ public class SchedulerClientConfiguration {
       IExtendedRabbitMQListener rabbitMQListener,
       ObjectMapper objectMapper,
       @Value("${com.pablintino.scheduler.client.url}") String baseUrl,
-      @Value("${com.pablintino.scheduler.client.exchange-name}") String exchange,
+      @Value("${com.pablintino.scheduler.client.exchange.name}") String exchange,
       @Value("${com.pablintino.scheduler.client.timeout:10000}") long clientTimeout) {
 
     return new SchedulerServiceClient(
