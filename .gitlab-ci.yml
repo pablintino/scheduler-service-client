@@ -35,6 +35,7 @@ cache:
     SPRING_DATASOURCE_PASSWORD: changeme
     SPRING_RABBITMQ_HOST: rabbitmq
     SPRING_RABBITMQ_PORT: 5672
+    COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT-URI: amqp://guest:guest@rabbitmq:5672
     COM_PABLINTINO_SCHEDULER_CLIENT_URL: http://scheduler-service:8080
     POSTGRES_DB: "it-database"
     POSTGRES_USER: "postgres"
