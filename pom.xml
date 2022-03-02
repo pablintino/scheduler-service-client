@@ -11,7 +11,7 @@
 
     <groupId>com.pablintino.services</groupId>
     <artifactId>scheduler-service-client-root</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
         <java.version>11</java.version>
@@ -75,7 +75,7 @@
     <scm>
         <developerConnection>scm:git:git@gitlab.pablintino.com:pablintino-arq/scheduler-service-client.git
         </developerConnection>
-        <tag>v0.0.4</tag>
+        <tag>v0.0.3</tag>
     </scm>
 
 </project>
