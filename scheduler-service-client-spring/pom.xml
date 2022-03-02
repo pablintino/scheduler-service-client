@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>scheduler-service-client-spring</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
 
     <dependencies>
