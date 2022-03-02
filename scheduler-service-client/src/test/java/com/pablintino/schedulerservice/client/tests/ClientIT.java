@@ -11,11 +11,13 @@ import org.junit.jupiter.api.*;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 class ClientIT {
 
@@ -26,11 +28,15 @@ class ClientIT {
 
   @BeforeEach
   void beforeEach() {
+    Map<String, String> properties =
+        System.getProperties().entrySet().stream()
+            .collect(Collectors.toMap(e -> (String) e.getKey(), e -> (String) e.getValue()));
+    properties.putAll(System.getenv());
     String rabbitUrl =
-        System.getProperty(
+        properties.getOrDefault(
             "COM_PABLINTINO_SCHEDULER_CLIENT_RABBIT_URI", "amqp://guest:guest@localhost:5672");
     String serviceUrl =
-        System.getProperty("COM_PABLINTINO_SCHEDULER_CLIENT_URL", "http://localhost:8080");
+        properties.getOrDefault("COM_PABLINTINO_SCHEDULER_CLIENT_URL", "http://localhost:8080");
     listener = new RabbitMQExtendedListener(rabbitUrl);
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
