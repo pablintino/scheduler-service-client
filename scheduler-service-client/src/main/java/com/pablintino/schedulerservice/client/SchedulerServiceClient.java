@@ -7,11 +7,11 @@ import com.pablintino.schedulerservice.dtos.CallbackDescriptorDto;
 import com.pablintino.schedulerservice.dtos.CallbackMethodTypeDto;
 import com.pablintino.schedulerservice.dtos.ScheduleRequestDto;
 import com.pablintino.schedulerservice.dtos.ScheduleTaskDto;
-import com.pablintino.services.commons.responses.HttpErrorBody;
+import com.pablintino.services.commons.exceptions.responses.HttpErrorBody;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.Assert;
+import org.apache.commons.lang3.Validate;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -65,14 +65,24 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
       throw new IllegalArgumentException("The given URL is not valid", ex);
     }
 
-    this.httpClient = HttpClient.newBuilder().build();
+    this.httpClient =
+        HttpClient.newBuilder()
+            .connectTimeout(Duration.of(clientTimeout, ChronoUnit.MILLIS))
+            .build();
   }
 
   @Override
   public void scheduleTask(String key, String id, ZonedDateTime triggerTime, Object data) {
-    Assert.hasLength(key, "key cannot be null");
-    Assert.notNull(id, "id cannot be null or empty");
-    Assert.notNull(triggerTime, "triggerTime cannot be null");
+    Validate.notBlank(key, "key cannot be null");
+    Validate.notNull(id, "id cannot be null or empty");
+    Validate.notNull(triggerTime, "triggerTime cannot be null");
+
+    log.debug(
+        "Scheduling task for key {} with ID {}. Trigger time: {} Data type: {}",
+        key,
+        id,
+        triggerTime,
+        data != null ? data.getClass() : "null");
 
     /* Prepare the request body */
     ScheduleRequestDto request = createCommonScheduleRequest(key, id, triggerTime, data);
@@ -82,10 +92,18 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
   @Override
   public void scheduleTask(
       String key, String id, ZonedDateTime triggerTime, String cronExpression, Object data) {
-    Assert.hasLength(key, "key cannot be null");
-    Assert.notNull(id, "id cannot be null or empty");
-    Assert.notNull(triggerTime, "triggerTime cannot be null");
-    Assert.hasLength(cronExpression, "cronExpression cannot be null");
+    Validate.notBlank(key, "key cannot be null");
+    Validate.notNull(id, "id cannot be null or empty");
+    Validate.notNull(triggerTime, "triggerTime cannot be null");
+    Validate.notBlank(cronExpression, "cronExpression cannot be null");
+
+    log.debug(
+        "Scheduling cron task for key {} with ID {}. Trigger time: {} Cron: {} Data type: {}",
+        key,
+        id,
+        triggerTime,
+        cronExpression,
+        data != null ? data.getClass() : "null");
 
     /* Prepare the request body */
     ScheduleRequestDto request = createCommonScheduleRequest(key, id, triggerTime, data);
@@ -95,9 +113,10 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
 
   @Override
   public void registerMessageSink(String key, ISchedulerMessageSink<?> messageSink) {
-    Assert.notNull(messageSink, "messageSink cannot be null");
-    Assert.hasLength(key, "key cannot be null or empty");
+    Validate.notNull(messageSink, "messageSink cannot be null");
+    Validate.notBlank(key, "key cannot be null or empty");
 
+    log.debug("Registering message sink for key {}. Sink: {}", key, messageSink);
     if (sinksMap.containsKey(key)) {
       throw new SchedulerServiceClientException("Key  " + key + " was already registered");
     }
@@ -112,6 +131,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
 
   @Override
   public void deleteTask(String key, String id) {
+    log.debug("Deleting task for key {} and ID {}", key, id);
     performRequest(
         createCommonRequestBuilder(createRelativeURI(key + "/" + id)).DELETE().build(), Void.class);
   }
@@ -144,7 +164,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
       throw new SchedulerServiceClientException("Key  " + key + " has no sink registered");
     }
 
-    if (data != null && !sinksMap.get(key).getDataType().equals(data.getClass())) {
+    if (data != null && !sinksMap.get(key).getDataType().isAssignableFrom(data.getClass())) {
       throw new SchedulerServiceClientException(
           "Data type "
               + data.getClass().getName()
@@ -198,7 +218,7 @@ public class SchedulerServiceClient implements ISchedulerServiceClient {
       throw new SchedulerServiceClientException(
           "Error parsing request/response scheduler task retrieval request", ex);
     } catch (IOException ex) {
-      throw new SchedulerServiceClientException("Error retrieving scheduler task", ex);
+      throw new SchedulerServiceClientException("Error performing " + httpRequest, ex);
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new SchedulerServiceClientException("Send thread interrupted", ex);

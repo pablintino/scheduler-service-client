@@ -1,7 +1,6 @@
-package com.pablintino.schedulerservice.client.config;
+package com.pablintino.schedulerservice.client.spring.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pablintino.schedulerservice.client.IExtendedRabbitMQListener;
 import com.pablintino.schedulerservice.client.ISchedulerServiceClient;
 import com.pablintino.schedulerservice.client.RabbitMQExtendedListener;
@@ -15,13 +14,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SchedulerClientConfiguration {
-
-  @Bean
-  ObjectMapper objectMapper() {
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new JavaTimeModule());
-    return objectMapper;
-  }
 
   @Bean
   IExtendedRabbitMQListener rabbitMQManager(

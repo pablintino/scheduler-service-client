@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pablintino.schedulerservice.callback.CallbackMessage;
 import com.pablintino.schedulerservice.client.models.SchedulerMetadata;
 import com.rabbitmq.client.Delivery;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,11 +13,12 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
+@ToString(onlyExplicitlyIncluded = true)
 class SchedulerMessageSink<T> implements ISchedulerMessageSink<T> {
 
   private static final String MEDIA_TYPE_APPLICATION_JSON = "application/json";
   private final ObjectMapper objectMapper;
-  private final Class<T> dataType;
+  @ToString.Include private final Class<T> dataType;
   private final IScheduleCallback<T> callback;
 
   SchedulerMessageSink(
