@@ -164,7 +164,7 @@
                                 </image>
                                 <image>
                                     <name>
-                                        registry.pablintino.com/pablintino-arq/scheduler-service:${scheduler-container-version}
+                                        registry.internal.pablintino.net/arq-svcs-rel/scheduler-service:${scheduler-container-version}
                                     </name>
                                     <run>
                                         <containerNamePattern>${scheduler-container-name}</containerNamePattern>

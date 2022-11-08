@@ -1,8 +1,3 @@
-image: docker:19.03.12
-# This template will build and test your projects
-# * Caches downloaded dependencies and plugins between invocation.
-# * Verify but don't deploy merge requests.
-# * Deploy built artifacts from master branch only.
 stages:
   - build
   - release
@@ -23,13 +18,25 @@ cache:
     - .m2/repository
 
 .mvn_build_and_it_tests:
+  image: registry.internal.pablintino.net/tools-rel/jdk-builder:v0.0.1-jdk11
+  before_script:
+    - source <(builder2 source)
   services:
     - name: postgres:13.4
+      alias: postgres
     - name: rabbitmq:3.9.5
-    - name: registry.pablintino.com/pablintino-arq/scheduler-service:latest
+      alias: rabbitmq
+    - name: registry.internal.pablintino.net/arq-svcs-rel/scheduler-service:latest
       alias: scheduler-service
+      entrypoint:
+        - '/bin/sh'
+        - '-c'
+        - |
+          sleep 20
+          exec java -jar /app.jar
+        # arg $0 should be explicitly passed when using 'sh -c' entrypoints
+        - '/bin/sh'
   variables:
-    FF_NETWORK_PER_BUILD: 1
     SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/it-database"
     SPRING_DATASOURCE_USERNAME: postgres
     SPRING_DATASOURCE_PASSWORD: changeme
@@ -41,37 +48,66 @@ cache:
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "changeme"
 
-maven-verify:
-  image: maven:3.8.2-jdk-11
-  stage: build
-  script:
-    - 'mvn $MAVEN_CLI_OPTS verify -s ci_settings.xml'
-  except:
-    - master
 
-maven-verify-it:
-  image: maven:3.8.2-jdk-11
+# On branches just build and test the package
+maven-verify-branch:
   extends: .mvn_build_and_it_tests
   stage: build
   script:
-    - 'mvn $MAVEN_CLI_OPTS verify -s ci_settings.xml -P ci-it-test'
-  only:
-    - master
-    - tags
+    - 'mvn $MAVEN_CLI_OPTS verify -P ci-it-test'
+  rules:
+    # Avoid pipeline creation for maven release plugin commits
+    - if: $CI_COMMIT_MESSAGE =~ /^\[maven\-release\-plugin\]/
+      when: never
+      allow_failure: false
+    # Else is non master nor tag run
+    - if: $CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_TAG == null
+      when: always
+      allow_failure: false
+
+# On master test and deploy the snapshot
+maven-verify-master:
+  extends: .mvn_build_and_it_tests
+  stage: build
+  script:
+    - |
+      attempt_counter=0
+      max_attempts=5
+      until $(curl --output /dev/null --silent --head http://scheduler-service:8080); do
+          if [ ${attempt_counter} -eq ${max_attempts} ];then
+            echo "Max attempts reached"
+            exit 1
+          fi
+
+          printf '.'
+          attempt_counter=$(($attempt_counter+1))
+          sleep 5
+      done
+    - 'mvn $MAVEN_CLI_OPTS deploy -s ci_settings.xml -P ci-it-test'
+  rules:
+    # Avoid pipeline creation for maven release plugin commits
+    - if: $CI_COMMIT_MESSAGE =~ /^\[maven\-release\-plugin\]/
+      when: never
+      allow_failure: false
+    # Else is a master run
+    - if: $CI_COMMIT_REF_NAME == "master"
+      when: always
+      allow_failure: false
+
 
 release:
-  image: maven:3.8.2-jdk-11
+  extends: .mvn_build_and_it_tests
   stage: release
   only:
     - master
   when: manual
   before_script:
+    - source <(builder2 source)
     - 'mkdir -p ~/.ssh/'
-    - 'echo -n "$DEPLOY_PRIVATE_KEY" | base64 --decode > ~/.ssh/id_rsa'
-    - 'chmod 700 ~/.ssh'
-    - 'chmod 600 ~/.ssh/id_rsa'
-    - 'cp $KNOWN_HOSTS ~/.ssh/known_hosts'
-    - 'apt-get update && apt-get install -y git'
+    - echo -n "$DEPLOY_PRIVATE_KEY" | base64 --decode > ~/.ssh/id_rsa
+    - 'chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa'
+    - 'ssh-keyscan $CI_SERVER_HOST >> ~/.ssh/known_hosts'
+    - 'chmod 644 ~/.ssh/known_hosts'
     - 'git config --global user.email "noreply@your.gitlab.host"'
     - 'git config --global user.name "GitLab CI"'
     - 'git checkout -B "$CI_COMMIT_REF_NAME"'

@@ -58,24 +58,24 @@
 
     <repositories>
         <repository>
-            <id>gitlab-maven</id>
-            <url>https://gitlab.pablintino.com/api/v4/groups/pablintino-arq/-/packages/maven</url>
+            <id>nexus1-maven-arq-svcs</id>
+            <url>https://nexus1.internal.pablintino.net/repository/maven-arq-svcs/</url>
         </repository>
     </repositories>
     <distributionManagement>
         <snapshotRepository>
-            <id>gitlab-maven</id>
-            <url>https://gitlab.pablintino.com/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+            <id>nexus1-maven-arq-svcs</id>
+            <url>https://nexus1.internal.pablintino.net/repository/maven-arq-svcs-snapshot/</url>
         </snapshotRepository>
         <repository>
-            <id>gitlab-maven</id>
-            <url>https://gitlab.pablintino.com/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+            <id>nexus1-maven-arq-svcs</id>
+            <url>https://nexus1.internal.pablintino.net/repository/maven-arq-svcs-rel/</url>
         </repository>
     </distributionManagement>
     <scm>
-        <developerConnection>scm:git:git@gitlab.pablintino.com:pablintino-arq/scheduler-service-client.git
+        <developerConnection>scm:git:git@gitlab.internal.pablintino.net:pablintino-arq/scheduler-service-client.git
         </developerConnection>
-        <tag>v0.0.3</tag>
+        <tag>HEAD</tag>
     </scm>
 
 </project>
